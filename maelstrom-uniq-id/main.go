@@ -23,19 +23,20 @@ func main() {
 			}
 		}
 
-		// Unmarshal the message body as an loosely-typed map.
-		var body map[string]any
-		if err := json.Unmarshal(msg.Body, &body); err != nil {
+		// Unmarshal the message req as an loosely-typed map.
+		var req map[string]any
+		if err := json.Unmarshal(msg.Body, &req); err != nil {
 			return err
 		}
-
+		
+		res := make(map[string]any, 2)
 		// Update the message type to return back.
-		body["type"] = "generate_ok"
-		body["id"] = idx[0]
+		res["type"] = "generate_ok"
+		res["id"] = idx[0]
 		idx[0]++
 
 		// Echo the original message back with the updated message type.
-		return n.Reply(msg, body)
+		return n.Reply(msg, res)
 	})
 	if err := n.Run(); err != nil {
 		log.Fatal(err)

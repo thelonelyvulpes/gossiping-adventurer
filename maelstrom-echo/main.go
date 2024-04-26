@@ -10,17 +10,18 @@ import (
 func main() {
 	n := maelstrom.NewNode()
 	n.Handle("echo", func(msg maelstrom.Message) error {
-		// Unmarshal the message body as an loosely-typed map.
-		var body map[string]any
-		if err := json.Unmarshal(msg.Body, &body); err != nil {
+		// Unmarshal the message req as an loosely-typed map.
+		var req map[string]any
+		if err := json.Unmarshal(msg.Body, &req); err != nil {
 			return err
 		}
-
-		// Update the message type to return back.
-		body["type"] = "echo_ok"
+		
+		res := make(map[string]any, 2)
+		res["type"] = "echo_ok"
+		res["message"] = req["message"]
 
 		// Echo the original message back with the updated message type.
-		return n.Reply(msg, body)
+		return n.Reply(msg, res)
 	})
 	if err := n.Run(); err != nil {
 		log.Fatal(err)
