@@ -4,61 +4,46 @@ import (
 	"encoding/json"
 	maelstrom "github.com/jepsen-io/maelstrom/demo/go"
 	"log"
-	"strconv"
-	"strings"
 )
 
 func main() {
+	broadcastOk := make(map[string]any, 1)
+	broadcastOk["type"] = "broadcast_ok"
+	var broadcastVal []int
+
 	n := maelstrom.NewNode()
-
-	var idx *uint64
-	var broadcastVal *int
 	n.Handle("broadcast", func(msg maelstrom.Message) error {
-		// Unmarshal the message req as an loosely-typed map.
 		var req map[string]any
 		if err := json.Unmarshal(msg.Body, &req); err != nil {
 			return err
 		}
-		r := body["message"].(string)
-		val, err := strconv.Atoi(r)
-		if err != nil {
-			panic(err)
-		}
-		*broadcastVal = val
-
-		// Update the message type to return back.
-		req["type"] = "broadcast_ok"
-
-		// Echo the original message back with the updated message type.
-		return n.Reply(msg, req)
+		f := int(req["message"].(float64))
+		broadcastVal = append(broadcastVal, f)
+		return n.Reply(msg, broadcastOk)
 	})
+
 	n.Handle("read", func(msg maelstrom.Message) error {
-		// Unmarshal the message reqbody as an loosely-typed map.
 		var req map[string]any
 		if err := json.Unmarshal(msg.Body, &req); err != nil {
 			return err
 		}
+		res := make(map[string]any, 2)
+		res["messages"] = broadcastVal
+		res["type"] = "read_ok"
 
-		// Update the message type to return back.
-		req["type"] = "read_ok"
-
-		// Echo the original message back with the updated message type.
-		return n.Reply(msg, req)
+		return n.Reply(msg, res)
 	})
 
 	n.Handle("topology", func(msg maelstrom.Message) error {
-		// Unmarshal the message req as an loosely-typed map.
 		var req map[string]any
 		if err := json.Unmarshal(msg.Body, &req); err != nil {
 			return err
 		}
-		
-		
-		// Update the message type to return back.
-		req["type"] = "topology_ok"
 
-		// Echo the original message back with the updated message type.
-		return n.Reply(msg, req)
+		res := make(map[string]any, 1)
+		res["type"] = "topology_ok"
+
+		return n.Reply(msg, res)
 	})
 
 	if err := n.Run(); err != nil {
